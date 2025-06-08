@@ -1,8 +1,17 @@
 import pandas as pd
-import pyarrow
-import pg8000
 
 from src.conn_to_db import conn_to_db, close_db
+
+
+
+# ************************************************************************
+# NOTE: the 2nd utility function that the third lambda will employ is 
+# function make_SQL_queries_to_warehouse(), which calls  
+# functions convert_dataframe_to_SQL_query_string() and 
+# put_table_data_in_warehouse() (both defined below) 
+# ************************************************************************
+
+
 
 def make_SQL_queries_to_warehouse(parq_dict: dict[str:pd.DataFrame]):
     """This function:
@@ -12,7 +21,7 @@ def make_SQL_queries_to_warehouse(parq_dict: dict[str:pd.DataFrame]):
 
         Args:
             parq_dict: this will be a python dictionary of pandas DataFrames
-                    that looks like this: {sales_fact: <pandas DataFrame>}
+                    that looks like this: {sales_fact: <pandas DataFrame>, etc}
             conn_util: the utility function that returns an instance of 
                     a pg8000 Connection object
             
@@ -22,7 +31,8 @@ def make_SQL_queries_to_warehouse(parq_dict: dict[str:pd.DataFrame]):
     """
     list_of_queries = [] # will contain list of query strings
     for key, value in parq_dict.items():
-        list_of_queries = convert_dataframe_to_SQL_query_string(key, value) # key = table name, 
+        if value != None:
+            list_of_queries = convert_dataframe_to_SQL_query_string(key, value) # key = table name, 
                                                                              # value = pandas dataframe
         
 
@@ -32,29 +42,12 @@ def make_SQL_queries_to_warehouse(parq_dict: dict[str:pd.DataFrame]):
 
 
 
-    # the parquet files in the S3 processed bucket will most likely 
-    # have the table name in their name, eg sales_fact.parquet,
-    # so the first utility function of the third lambda must 
-    # create parq_dict, where each key is the name of the table
-
-
-
-    # {
-    # "dim_table_xxxxx": <A parquet file>, 
-    # "dim_table_yyyy": <A parquet file>,
-    # "dim_table_aa": <A parquet file>, 
-    # "dim_table_bbb": <A parquet file>,
-    # "dim_table_ccc": <A parquet file>, 
-    # "dim_table_ddd: <A parquet file>,
-    # "facts_table_eee": <A parquet file>,
-    # ...
-    # }
 
 
 def convert_dataframe_to_SQL_query_string(table_name, dataFrame):
     """
     This function:
-        1) reads the data in a pandas DataFrame
+        1) reads the data in a pandas dataFrame
         2) creates an SQL query string that includes the data
               in the dataframe, one SQL query string for each column
         3) puts the SQL query strings into a python list                
@@ -67,18 +60,30 @@ def convert_dataframe_to_SQL_query_string(table_name, dataFrame):
         A python list of strings, where each string is an SQL query
     """
 
-    # Load the Parquet file:
-    df = pd.read_parquet(dataFrame)
+    # make a list in which the 
+    # sql query strings will 
+    # reside:
+    sql_query_strs_list = []
+    
+    # Convert each row to an 
+    # INSERT sql query string
+    # and put all strings in 
+    # the list. iterrows() is 
+    # a pandas method that  
+    # loops through a DataFrame
+    # row by row and for each row 
+    # returns the index of the 
+    # row and the row itself as 
+    # a pandas Series (WON'T 
+    # WORK without index
+    # below, so don't remove!!!):
+    for index, row in dataFrame.iterrows():
+        columns = ', '.join(dataFrame.columns)
+        values = ', '.join(f"'{str(v)}'" if v is not None else 'NULL' for v in row)
+        sql_query_str = f"INSERT INTO {table_name} ({columns}) VALUES ({values});"
+        sql_query_strs_list.append(sql_query_str)
 
-    # Convert each row to an INSERT statement
-    insert_statements = []
-    for _, row in df.iterrows():
-        columns = ', '.join(df.columns)
-    values = ', '.join(f"'{str(v)}'" if v is not None else 'NULL' for v in row)
-    sql = f"INSERT INTO {table_name} ({columns}) VALUES ({values});"
-    insert_statements.append(sql)
-
-    return insert_statements
+    return sql_query_strs_list
 
 
 
@@ -102,9 +107,17 @@ def put_table_data_in_warehouse(query_list):
     Returns:
         None
     """
-     
+    
+    # make the connection to the warehouse
+    # (a posgresql database): 
     conn = conn_to_db('xxwarehouse name herexxx')
+
+    # send sql queries to the warehouse
+    # database:
     for query_string in query_list:
         conn.run(query_string)
+
+    # close the connection to
+    # the warehouse:        
     close_db()        
         

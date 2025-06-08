@@ -15,25 +15,27 @@ logger = logging.getLogger("Mylogger")
 def write_to_ingestion_bucket(data: dict | list | str, bucket: str, file_location: str):
     """
     This function:
-    1. calls the following utility functions to carry out its role:
-            i)   get_most_recent_table_data()
-            ii)  create_formatted_timestamp()
-            iii) update_rows_in_table()
-            iv)  save_updated_table_to_S3()
-    2. searches the ingestion bucket for all jsonified table lists
+    1. searches the ingestion bucket for all jsonified table lists
             that are stored under a key that begins with
             file_location and gets the most recent list
-    3. converts the most recent list to a python list of dictionaries
-    4. updates the appropriate rows in the python list
-    5. creates a new json list to represent the updated table
-    6. creates a timestamp string that will be part of the name of
+    2. converts the most recent list to a python list of dictionaries
+    3. updates the appropriate rows in the python list
+    4. creates a new json list to represent the updated table
+    5. creates a timestamp string that will be part of the name of
             the key under which to store the jsonified list.
-    7. stores in the ingestion bucket the new jsonified list that
+    6. stores in the ingestion bucket the new jsonified list that
             represents the updated table. The key for this new json
             list looks like design/2025-05-28_15-45-03.json, where
             'design' is the value of arg file_location and
             '2025-05-28_15-45-03' is a timestamp created in this
             function.
+    7. calls the following utility functions (all of which are in this file) 
+        to carry out its role:
+        i)   get_most_recent_table_data()
+        ii)  create_formatted_timestamp()
+        iii) update_rows_in_table()
+        iv)  save_updated_table_to_S3()
+            
 
     args:
         data: a jsonified list of dictionaries that represents
