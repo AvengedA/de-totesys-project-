@@ -13,9 +13,16 @@ import pyarrow
 
 
 # ******************************************************************************
-# **** The third lambda uses utility function get_parquet_files(), declared here.
+# NOTE: The third lambda employs these two utility functions:
+# 1) get_pandas_dataFrames(), declared here
+# 2) make_SQL_queries_to_warehouse() declared in file 
+#   second_util_for_3rd_lambda.py.
+#
 # get_pandas_dataFrames() employs three other utility functions, also declared 
-# in this file.
+# in this file. These are:
+# 1) get_latest_timestamp()
+# 2) get_keys_of_latest_tables()
+# 3) get_pq_files()
 # ******************************************************************************
 
 def get_pandas_dataFrames(proc_bucket, ing_bucket, S3_client, current_ts_key):
@@ -27,7 +34,8 @@ def get_pandas_dataFrames(proc_bucket, ing_bucket, S3_client, current_ts_key):
                 utility functions (all declared bellow):
                 i)   get_latest_timestamp()
                 ii)  get_keys_of_latest_tables() 
-                iii) get_pq_files() 
+                iii) get_pq_files() (which employs utility function
+                    return_long_table_name()) 
         Args:
             proc_bucket: a string for the name of the processed S3 bucket  
             ing_bucket:  a string for the name of the ingestion S3 bucket  
@@ -85,23 +93,32 @@ def get_pandas_dataFrames(proc_bucket, ing_bucket, S3_client, current_ts_key):
 def get_keys_of_latest_tables(S3_client, proc_bucket, ts_prefix):
     """
     This function:
-        returns all keys from the processed bucket that 
-            contain string ts at the beginning
+        looks for all keys in the processed bucket that 
+            contain string ts_prefix at the beginning
+            and returns them
 
     Args:
         S3_client: a boto3 S3_client
         proc_bucket: a string that is the name of the processed bucket
-        ts: a string for the latest timestamp as held in the 
-            ingestion bucket
+        ts: a string for the latest timestamp, which the ingestion
+            bucket contains
 
     Returns:
         a python list of strings, each string being the key
         for the latest files in the processed bucket
 
             """
-    response = S3_client.list_objects_v2(Bucket=proc_bucket, Prefix=ts_prefix)
+    response = S3_client.list_objects_v2(
+        Bucket=proc_bucket, 
+        Prefix=ts_prefix
+                                        )
+    
     list_of_dicts = response["Contents"]
+
     return [  dict['Key']   for dict in list_of_dicts  ] # list of strings that are names of the S3 keys
+
+
+
 
 
 
@@ -148,13 +165,27 @@ def get_pq_files(S3_client, key_list, proc_bckt):
         'dim_counterparty': None,
                          }
 
+# loop through the passed-in list of keys:
     for table_key in key_list:
+        # get the short table name from the key:
+        # 'xxxxxx/date.parquet'
         table_name = table_key.split('/')[-1].split('.')[0] # eg 'date'
+        # knowing the short table name 
+        # get the proper (long) table 
+        # name (for example 
+        # return_long_table_name()
+        # converts 'date' to 'dim_date'):
         long_table_name = return_long_table_name(table_name)
+        # get the object in the processed 
+        # bucket according to its key and 
+        # convert it to a pandas dataFrame:
         response = S3_client.get_object(Key=table_key, Bucket=proc_bckt)
         pq_bytes_file = response['Body'].read()
         parquet_buffer = BytesIO(pq_bytes_file)
         dataFrame = pd.read_parquet(parquet_buffer, engine='pyarrow')
+        # store the dataFrame in the 
+        # dictionary that this function
+        # will return:
         dict_of_dataFrames[long_table_name] = dataFrame
 
     return dict_of_dataFrames
@@ -199,11 +230,12 @@ def get_latest_timestamp(S3_client, bckt, key):
     Args:
         S3_client: the boto3 s3 client
         bckt: a string for the name of the bucket
-        key: the key of the object
+        key: the key of the object that is the timestamp
+            string (which the ingestion bucket holds)
     Returns:
         A string that is the timestamp
         
-    
+
     """
     response = S3_client.get_object(Bucket=bckt, Key=key)
     return response["Body"].read().decode("utf-8")

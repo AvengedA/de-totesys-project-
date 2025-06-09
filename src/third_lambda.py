@@ -64,7 +64,7 @@ def lambda_handler(event, context):
 
 
     # get the data out of each of the
-    # files in the dictonary above and 
+    # files in the dictionary above and 
     # put the data in them into the 
     # warehouse database:
     make_SQL_queries_to_warehouse(dataFrames_dict)

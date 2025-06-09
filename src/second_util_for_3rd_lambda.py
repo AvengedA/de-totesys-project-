@@ -5,10 +5,12 @@ from src.conn_to_db import conn_to_db, close_db
 
 
 # ************************************************************************
-# NOTE: the 2nd utility function that the third lambda will employ is 
-# function make_SQL_queries_to_warehouse(), which calls  
-# functions convert_dataframe_to_SQL_query_string() and 
-# put_table_data_in_warehouse() (both defined below) 
+# NOTE: this file declares function make_SQL_queries_to_warehouse(),
+# which is the 2nd utility function that the third lambda will employ.
+# make_SQL_queries_to_warehouse() itself employs these two utility
+# functions (both declared below):
+# 1) convert_dataframe_to_SQL_query_string() and 
+# 2) put_table_data_in_warehouse() 
 # ************************************************************************
 
 
@@ -18,6 +20,9 @@ def make_SQL_queries_to_warehouse(parq_dict: dict[str:pd.DataFrame]):
             1) receives several pandas DataFrames in a python dictionary
             2) converts each DataFrame into an SQL query
             3) uses the query to put the table data into the posgresql warehouse
+            4) employs these two function:
+                a) convert_dataframe_to_SQL_query_string()
+                b) put_table_data_in_warehouse()
 
         Args:
             parq_dict: this will be a python dictionary of pandas DataFrames
