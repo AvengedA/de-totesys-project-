@@ -50,7 +50,7 @@ resource "aws_lambda_function" "extract_handler" {
   source_code_hash = data.archive_file.first_lambda_archive.output_base64sha256
 }
 
-resource "aws_lambda_layer_version" "my_layer" {
+resource "aws_lambda_layer_version" "layer" {
   layer_name          = "pg8000-layer"
   compatible_runtimes = [var.python_runtime]
   s3_bucket           = aws_s3_bucket.lambda-bucket.bucket  # Correct reference to the bucket name
