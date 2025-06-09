@@ -50,11 +50,11 @@ resource "aws_lambda_function" "extract_handler" {
   source_code_hash = data.archive_file.first_lambda_archive.output_base64sha256
 }
 
-resource "aws_lambda_layer_version" "layer" {
+resource "aws_lambda_layer_version" "pg8000_layer" {
   layer_name          = "pg8000-layer"
   compatible_runtimes = [var.python_runtime]
   s3_bucket           = aws_s3_bucket.lambda-bucket.bucket  # Correct reference to the bucket name
-  s3_key              = "layer.zip"  # Path to the layer zip in the S3 bucket
+  s3_key              = "layer/layer.zip"  # Path to the layer zip in the S3 bucket
 }
 #   environment {
 #     variables = {
