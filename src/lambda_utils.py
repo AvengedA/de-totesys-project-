@@ -1,6 +1,6 @@
-from src.conn_to_db import conn_to_db
-from src.utils import convert_data, read_table
-from src.utils_write_to_ingestion_bucket import create_formatted_timestamp
+from conn_to_db import conn_to_db
+from utils import convert_data, read_table
+from utils_write_to_ingestion_bucket import create_formatted_timestamp
 import os
 import json
 from datetime import datetime

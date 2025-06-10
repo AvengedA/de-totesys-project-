@@ -1,6 +1,6 @@
 import boto3
-from src.First_util_for_3rd_lambda import get_pandas_dataFrames
-from src.second_util_for_3rd_lambda import make_SQL_queries_to_warehouse
+from First_util_for_3rd_lambda import get_pandas_dataFrames
+from second_util_for_3rd_lambda import make_SQL_queries_to_warehouse
 
 
 # ***********#***********#***********#***********#***********#***********

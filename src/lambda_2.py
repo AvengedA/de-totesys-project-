@@ -1,4 +1,4 @@
-from src.utils_2 import *
+from utils_2 import *
 import boto3
 import datetime
 import logging
